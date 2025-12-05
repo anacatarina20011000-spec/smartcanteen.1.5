@@ -76,3 +76,25 @@ aside {
 .avatar-border {
   border: 2px solid rgba(0,0,0,0.06);
 }
+
+/* Drawer / tabs styling */
+.drawer-tab {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.drawer-tab.active {
+  background: #f3f4f6;
+}
+
+/* aumenta legibilidade dos botões no drawer */
+#root .sliding-drawer .btn {
+  padding: 8px 12px;
+}
+
+/* style modal overlay buttons */
+.fixed .bg-white button {
+  min-width: 110px;
+}
+
