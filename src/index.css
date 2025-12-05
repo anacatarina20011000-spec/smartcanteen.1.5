@@ -28,3 +28,51 @@
   background: var(--accent-2);
 }
 
+/* fade helper (opcional) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeIn 400ms ease forwards;
+}
+
+/* index.css - melhorias visuais */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+
+:root{
+  --accent:hsl(244, 85%, 46%);
+  --accent-2:#2fbbe1;
+}
+
+body { font-family: 'Poppins', system-ui, sans-serif; background: #f6f7fb; }
+
+/* hero */
+.hero-card {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(23,23,23,0.08);
+}
+
+/* big heading */
+h1,h2 {
+  letter-spacing: -0.02em;
+}
+
+/* buttons */
+.btn-pill {
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(107,70,255,0.12);
+}
+
+/* drawer look */
+aside {
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+/* avatar */
+.avatar-border {
+  border: 2px solid rgba(0,0,0,0.06);
+}
