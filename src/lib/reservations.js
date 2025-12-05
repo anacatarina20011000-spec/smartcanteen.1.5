@@ -1,37 +1,47 @@
 // src/lib/reservations.js
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  deleteDoc,
-  doc
-} from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
 /**
- * Cria uma reserva. Recebe explicitamente orderId (opcional).
- * @param {{user: {uid, email}, item: {id, name, price}, orderId?: string|null}} args
+ * createReservation({ user, item, orderId })
+ * - user: firebase user object (must have uid, email)
+ * - item: { id, name, price }
+ * - orderId: string
+ *
+ * returns { id, ref }
  */
-export async function createReservation({ user, item, orderId = null }) {
-  if (!user) throw new Error("Tem de iniciar sessão.");
-
+export async function createReservation({ user, item, orderId }) {
+  if (!user || !user.uid) throw new Error("User não autenticado");
   const payload = {
     uid: user.uid,
     userEmail: user.email || null,
     itemId: item.id,
-    title: item.name || item.title || item.id,
+    title: item.name || item.title || itemId,
     price: item.price || 0,
-    status: "reserved",
     orderId: orderId || null,
-    createdAt: serverTimestamp()
+    status: "reserved",
+    createdAt: serverTimestamp(),
   };
 
-  const docRef = await addDoc(collection(db, "reservations"), payload);
-  return { id: docRef.id, data: payload };
+  const col = collection(db, "reservations");
+  const docRef = await addDoc(col, payload);
+  return { id: docRef.id, ref: docRef };
 }
 
-export async function cancelReservation(reservationId) {
-  if (!reservationId) throw new Error("reservationId required");
-  await deleteDoc(doc(db, "reservations", reservationId));
-  return { ok: true };
+/**
+ * cancelReservation(reservationId, opts)
+ * - faz UPDATE do campo status -> "cancelled" e fecha com cancelledAt
+ * - evita deleteDoc para prevenir problemas com listeners simultâneos
+ */
+export async function cancelReservation(reservationId, { cancelledByUid = null } = {}) {
+  if (!reservationId) throw new Error("reservationId obrigatório");
+  const rDoc = doc(db, "reservations", reservationId);
+
+  await updateDoc(rDoc, {
+    status: "cancelled",
+    cancelledAt: serverTimestamp(),
+    cancelledBy: cancelledByUid || null,
+  });
+
+  return { id: reservationId };
 }

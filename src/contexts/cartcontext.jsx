@@ -10,14 +10,14 @@ const CartContext = createContext();
 function cartReducer(state, action) {
   switch (action.type) {
     case "INIT":
-      return { ...state, items: action.payload || [] };
+      return { items: action.payload || [] };
     case "ADD": {
       const exists = state.items.find(i => i.id === action.payload.id);
       if (exists) {
         return {
           ...state,
           items: state.items.map(i =>
-            i.id === action.payload.id ? { ...i, qty: i.qty + (action.payload.qty || 1) } : i
+            i.id === action.payload.id ? { ...i, qty: (i.qty || 1) + (action.payload.qty || 1) } : i
           )
         };
       }
@@ -26,10 +26,7 @@ function cartReducer(state, action) {
     case "REMOVE":
       return { ...state, items: state.items.filter(i => i.id !== action.payload) };
     case "UPDATE_QTY":
-      return {
-        ...state,
-        items: state.items.map(i => (i.id === action.payload.id ? { ...i, qty: action.payload.qty } : i))
-      };
+      return { ...state, items: state.items.map(i => (i.id === action.payload.id ? { ...i, qty: action.payload.qty } : i)) };
     case "CLEAR":
       return { items: [] };
     default:
@@ -45,7 +42,7 @@ export function CartProvider({ children }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [] });
   const { currentUser } = useAuth();
 
-  // load from localStorage
+  // carregar do localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem("smartcanteen_cart_v1");
@@ -56,7 +53,7 @@ export function CartProvider({ children }) {
         }
       }
     } catch (e) {
-      console.warn("CartProvider: localStorage read error", e);
+      console.warn("CartProvider: read localStorage error", e);
     }
   }, []);
 
@@ -64,7 +61,7 @@ export function CartProvider({ children }) {
     try {
       localStorage.setItem("smartcanteen_cart_v1", JSON.stringify({ items: state.items }));
     } catch (e) {
-      console.warn("CartProvider: localStorage write error", e);
+      console.warn("CartProvider: write localStorage error", e);
     }
   }, [state.items]);
 
@@ -88,15 +85,21 @@ export function CartProvider({ children }) {
     return state.items.reduce((s, it) => s + (Number(it.price || 0) * (it.qty || 1)), 0);
   }
 
-  // checkout: create order, then reservations for each item (attached orderId)
+  /**
+   * checkout():
+   * - valida user
+   * - cria orders doc
+   * - cria reservations (one per item) usando createReservation (helper)
+   * - NÃO limpa o carrinho aqui (caller faz isso depois)
+   */
   async function checkout() {
-    if (!currentUser) throw new Error("Deve estar autenticado para comprar.");
-    if (state.items.length === 0) throw new Error("Carrinho vazio.");
+    if (!currentUser || !currentUser.uid) throw new Error("Deve estar autenticado para comprar.");
+    if (!state.items || state.items.length === 0) throw new Error("Carrinho vazio.");
 
-    const order = {
+    const orderPayload = {
       userId: currentUser.uid,
       userEmail: currentUser.email || null,
-      items: state.items.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })),
+      items: state.items.map(i => ({ id: i.id, name: i.name, price: Number(i.price || 0), qty: i.qty })),
       total: cartTotal(),
       status: "paid",
       createdAt: serverTimestamp(),
@@ -104,21 +107,23 @@ export function CartProvider({ children }) {
 
     try {
       const ordersCol = collection(db, "orders");
-      const docRef = await addDoc(ordersCol, order);
-      const orderId = docRef.id;
+      const orderRef = await addDoc(ordersCol, orderPayload);
+      const orderId = orderRef.id;
 
-      // create reservations using helper (passes orderId)
-      const reservationPromises = state.items.map(i =>
-        createReservation({ user: currentUser, item: { id: i.id, name: i.name, price: i.price }, orderId })
-      );
+      // cria reservas e passa orderId
+      const createdReservations = [];
+      for (const it of state.items) {
+        try {
+          const res = await createReservation({ user: currentUser, item: { id: it.id, name: it.name, price: it.price }, orderId });
+          createdReservations.push(res.id);
+        } catch (err) {
+          console.warn("createReservation failed for item", it, err);
+        }
+      }
 
-      const reservationResults = await Promise.all(reservationPromises);
-      const reservationIds = reservationResults.map(r => r.id);
-
-      // don't clear cart here — let UI decide when to clear (we can clear later)
-      return { orderId, reservationIds };
+      return { orderId, reservationIds: createdReservations };
     } catch (err) {
-      console.error("CartProvider: checkout error:", err);
+      console.error("CartProvider: checkout error", err);
       throw err;
     }
   }

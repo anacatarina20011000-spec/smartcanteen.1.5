@@ -6,8 +6,8 @@ import { AuthProvider } from "./contexts/authcontext";
 import { CartProvider } from "./contexts/cartcontext";
 import "./index.css";
 
-const rootEl = document.getElementById("root") || document.getElementById("app");
-
+const rootEl = document.getElementById("root");
+if (!rootEl) console.error("Root element not found. Verifica index.html");
 ReactDOM.createRoot(rootEl).render(
   <React.StrictMode>
     <AuthProvider>
@@ -17,4 +17,3 @@ ReactDOM.createRoot(rootEl).render(
     </AuthProvider>
   </React.StrictMode>
 );
-

@@ -19,13 +19,14 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-let analytics = null;
+let analytics;
 try {
   analytics = getAnalytics(app);
-} catch {
-  // analytics may fail in some environments (ignore)
+} catch (e) {
+  // analytics falha em ambientes sem window/document — não crítico
+  // console.warn("Analytics not available:", e);
 }
-export { analytics };
+export const firebaseAnalytics = analytics;
 
 console.log("Firebase carregado — Project ID:", firebaseConfig.projectId);
 export default app;

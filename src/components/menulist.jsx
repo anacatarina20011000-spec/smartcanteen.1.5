@@ -5,9 +5,7 @@ import MenuCard from "./menucard";
 export default function MenuList({ menus }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {menus.map(menu => (
-        <MenuCard key={menu.id || menu._id || menu.name} menu={menu} />
-      ))}
+      {menus.map(menu => <MenuCard key={menu.id || menu._id || menu.name} menu={menu} />)}
     </div>
   );
 }

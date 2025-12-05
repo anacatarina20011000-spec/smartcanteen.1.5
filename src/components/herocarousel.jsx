@@ -1,32 +1,55 @@
-// src/components/HeroCarousel.jsx
-import React from "react";
+// src/components/herocarousel.jsx
+import React, { useState, useEffect } from "react";
 
-export default function HeroCarousel({ images = ["/imagens/foto1.jpg", "/imagens/foto2.jpg", "/imagens/foto3.jpg"] }) {
-  const [index, setIndex] = React.useState(0);
+/**
+ * Coloca as tuas fotos em: public/imagens/1.jpg, 2.jpg, 3.jpg
+ * (ou ajusta paths para /imagens/ se tens outra configuração).
+ */
+const slides = [
+  { id: 1, title: "Refeições saudáveis", subtitle: "Pratos frescos todos os dias", img: "/imagens/foto1.jpg" },
+  { id: 2, title: "Sabor caseiro", subtitle: "Receitas com amor", img: "/imagens/foto2.jpg" },
+  { id: 3, title: "Opções vegetarianas", subtitle: "Variedade e cor", img: "/imagens/foto3.jpg" }
+];
 
-  React.useEffect(() => {
-    const t = setInterval(() => setIndex(i => (i + 1) % images.length), 4500);
+export default function HeroCarousel({ auto = true, interval = 5000 }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (!auto) return;
+    const t = setInterval(() => setIndex(i => (i + 1) % slides.length), interval);
     return () => clearInterval(t);
-  }, [images.length]);
-
-  if (!images || images.length === 0) return null;
+  }, [auto, interval]);
 
   return (
-    <div className="hero-card relative rounded-lg overflow-hidden">
-      <div className="h-56 md:h-72 w-full bg-gray-200 flex items-center justify-center">
-        <img src={images[index]} alt={`slide-${index}`} className="object-cover w-full h-full" />
+    <div className="relative rounded-lg overflow-hidden bg-white soft-shadow">
+      <div className="h-56 md:h-72 flex">
+        {slides.map((s, i) => (
+          <div
+            key={s.id}
+            className={`w-full flex-shrink-0 transition-transform duration-500`} 
+            style={{ transform: `translateX(${(i - index) * 100}%)` }}
+          >
+            <div className="h-56 md:h-72 bg-cover bg-center flex items-center" style={{ backgroundImage: `url(${s.img})` }}>
+              <div className="bg-black bg-opacity-30 text-white p-6 rounded-md ml-6 max-w-md">
+                <h3 className="text-2xl font-bold">{s.title}</h3>
+                <p className="text-sm mt-2">{s.subtitle}</p>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <button aria-label="prev" onClick={() => setIndex(i => (i - 1 + images.length) % images.length)} className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full p-2">
-        ‹
-      </button>
-      <button aria-label="next" onClick={() => setIndex(i => (i + 1) % images.length)} className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/30 text-white rounded-full p-2">
-        ›
-      </button>
+      <div className="absolute left-4 top-1/2 -translate-y-1/2">
+        <button onClick={() => setIndex(i => (i - 1 + slides.length) % slides.length)} className="px-3 py-2 bg-white/80 rounded-full shadow">‹</button>
+      </div>
 
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-4 flex gap-2">
-        {images.map((_, i) => (
-          <button key={i} onClick={() => setIndex(i)} className={`w-2 h-2 rounded-full ${i === index ? "bg-white" : "bg-white/50"}`} />
+      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+        <button onClick={() => setIndex(i => (i + 1) % slides.length)} className="px-3 py-2 bg-white/80 rounded-full shadow">›</button>
+      </div>
+
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+        {slides.map((_, i) => (
+          <button key={i} onClick={() => setIndex(i)} className={`w-3 h-3 rounded-full ${i === index ? "bg-white" : "bg-white/60"}`} />
         ))}
       </div>
     </div>
